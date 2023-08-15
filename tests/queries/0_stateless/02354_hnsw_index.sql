@@ -49,12 +49,11 @@ INSERT INTO tab VALUES (1, [0.0, 0.0, 10.0]), (2, [0.0, 0.0, 10.5]), (3, [0.0, 0
 -- rows = 15, index_granularity = 5, GRANULARITY = 1 gives 3 usearch-indexed blocks (each comprising a single granule)
 -- condition 'L2Distance(vector, reference_vector) < 1.0' ensures that only one usearch-indexed block produces results --> "Granules: 1/3"
 
--- See (*) why commented out
--- SELECT 'WHERE type, L2Distance';
--- SELECT *
--- FROM tab
--- WHERE L2Distance(vector, [0.0, 0.0, 10.0]) < 1.0
--- LIMIT 3;
+SELECT 'WHERE type, L2Distance';
+SELECT *
+FROM tab
+WHERE L2Distance(vector, [0.0, 0.0, 10.0]) < 1.0
+LIMIT 3;
 
 SELECT 'WHERE type, L2Distance, check that index is used';
 EXPLAIN indexes=1
@@ -63,12 +62,11 @@ FROM tab
 WHERE L2Distance(vector, [0.0, 0.0, 10.0]) < 1.0
 LIMIT 3;
 
--- See (*) why commented out
--- SELECT 'ORDER BY type, L2Distance';
--- SELECT *
--- FROM tab
--- ORDER BY L2Distance(vector, [0.0, 0.0, 10.0])
--- LIMIT 3;
+SELECT 'ORDER BY type, L2Distance';
+SELECT *
+FROM tab
+ORDER BY L2Distance(vector, [0.0, 0.0, 10.0])
+LIMIT 3;
 
 SELECT 'ORDER BY type, L2Distance, check that index is used';
 EXPLAIN indexes=1
@@ -110,12 +108,11 @@ SELECT '--- Test with Tuple, GRANULARITY = 1, index_granularity = 5 ---';
 CREATE TABLE tab(id Int32, vector Tuple(Float32, Float32, Float32), INDEX usearch_index vector TYPE usearch() GRANULARITY 1) ENGINE = MergeTree ORDER BY id SETTINGS index_granularity = 5;
 INSERT INTO tab VALUES (1, (0.0, 0.0, 10.0)), (2, (0.0, 0.0, 10.5)), (3, (0.0, 0.0, 9.5)), (4, (0.0, 0.0, 9.7)), (5, (0.0, 0.0, 10.2)), (6, (10.0, 0.0, 0.0)), (7, (9.5, 0.0, 0.0)), (8, (9.7, 0.0, 0.0)), (9, (10.2, 0.0, 0.0)), (10, (10.5, 0.0, 0.0)), (11, (0.0, 10.0, 0.0)), (12, (0.0, 9.5, 0.0)), (13, (0.0, 9.7, 0.0)), (14, (0.0, 10.2, 0.0)), (15, (0.0, 10.5, 0.0));
 
--- See (*) why commented out
--- SELECT 'WHERE type, L2Distance';
--- SELECT *
--- FROM tab
--- WHERE L2Distance(vector, (0.0, 0.0, 10.0)) < 1.0
--- LIMIT 3;
+SELECT 'WHERE type, L2Distance';
+SELECT *
+FROM tab
+WHERE L2Distance(vector, (0.0, 0.0, 10.0)) < 1.0
+LIMIT 3;
 
 SELECT 'WHERE type, L2Distance, check that index is used';
 EXPLAIN indexes=1
@@ -124,12 +121,11 @@ FROM tab
 WHERE L2Distance(vector, (0.0, 0.0, 10.0)) < 1.0
 LIMIT 3;
 
--- See (*) why commented out
--- SELECT 'ORDER BY type, L2Distance';
--- SELECT *
--- FROM tab
--- ORDER BY L2Distance(vector, (0.0, 0.0, 10.0))
--- LIMIT 3;
+SELECT 'ORDER BY type, L2Distance';
+SELECT *
+FROM tab
+ORDER BY L2Distance(vector, (0.0, 0.0, 10.0))
+LIMIT 3;
 
 SELECT 'ORDER BY type, L2Distance, check that index is used';
 EXPLAIN indexes=1
@@ -146,19 +142,17 @@ SELECT '--- Test non-default metric (cosine distance) ---';
 CREATE TABLE tab(id Int32, vector Array(Float32), INDEX usearch_index vector TYPE usearch('cosineDistance') GRANULARITY 1) ENGINE = MergeTree ORDER BY id SETTINGS index_granularity = 5;
 INSERT INTO tab VALUES (1, [0.0, 0.0, 10.0]), (2, [0.0, 0.0, 10.5]), (3, [0.0, 0.0, 9.5]), (4, [0.0, 0.0, 9.7]), (5, [0.0, 0.0, 10.2]), (6, [10.0, 0.0, 0.0]), (7, [9.5, 0.0, 0.0]), (8, [9.7, 0.0, 0.0]), (9, [10.2, 0.0, 0.0]), (10, [10.5, 0.0, 0.0]), (11, [0.0, 10.0, 0.0]), (12, [0.0, 9.5, 0.0]), (13, [0.0, 9.7, 0.0]), (14, [0.0, 10.2, 0.0]), (15, [0.0, 10.5, 0.0]);
 
--- See (*) why commented out
--- SELECT 'WHERE type, L2Distance';
--- SELECT *
--- FROM tab
--- WHERE L2Distance(vector, [0.0, 0.0, 10.0]) < 1.0
--- LIMIT 3;
+SELECT 'WHERE type, L2Distance';
+SELECT *
+FROM tab
+WHERE L2Distance(vector, [0.0, 0.0, 10.0]) < 1.0
+LIMIT 3;
 
--- See (*) why commented out
--- SELECT 'ORDER BY type, L2Distance';
--- SELECT *
--- FROM tab
--- ORDER BY L2Distance(vector, [0.0, 0.0, 10.0])
--- LIMIT 3;
+SELECT 'ORDER BY type, L2Distance';
+SELECT *
+FROM tab
+ORDER BY L2Distance(vector, [0.0, 0.0, 10.0])
+LIMIT 3;
 
 DROP TABLE tab;
 
@@ -170,12 +164,11 @@ INSERT INTO tab VALUES (1, [0.0, 0.0, 10.0, 0.0]), (2, [0.0, 0.0, 10.5, 0.0]), (
 -- rows = 16, index_granularity = 4, GRANULARITY = 2 gives 2 usearch-indexed blocks (each comprising two granules)
 -- condition 'L2Distance(vector, reference_vector) < 1.0' ensures that only one usearch-indexed block produces results --> "Granules: 2/4"
 
--- See (*) why commented out
--- SELECT 'WHERE type, L2Distance';
--- SELECT *
--- FROM tab
--- WHERE L2Distance(vector, [10.0, 0.0, 10.0, 0.0]) < 5.0
--- LIMIT 3;
+SELECT 'WHERE type, L2Distance';
+SELECT *
+FROM tab
+WHERE L2Distance(vector, [10.0, 0.0, 10.0, 0.0]) < 5.0
+LIMIT 3;
 
 SELECT 'WHERE type, L2Distance, check that index is used';
 EXPLAIN indexes=1
@@ -183,13 +176,6 @@ SELECT *
 FROM tab
 WHERE L2Distance(vector, [10.0, 0.0, 10.0, 0.0]) < 5.0
 LIMIT 3;
-
--- See (*) why commented out
--- SELECT 'ORDER BY type, L2Distance';
--- SELECT *
--- FROM tab
--- ORDER BY L2Distance(vector, [10.0, 0.0, 10.0, 0.0])
--- LIMIT 3;
 
 SELECT 'ORDER BY type, L2Distance, check that index is used';
 EXPLAIN indexes=1
@@ -208,12 +194,11 @@ INSERT INTO tab VALUES (1, [0.0, 0.0, 10.0, 0.0]), (2, [0.0, 0.0, 10.5, 0.0]), (
 -- rows = 16, index_granularity = 4, GRANULARITY = 4 gives a single usearch-indexed block (comprising all granules)
 -- no two matches happen to be located in the same granule, so with LIMIT = 3, we'll get "Granules: 2/4"
 
--- See (*) why commented out
--- SELECT 'WHERE type, L2Distance';
--- SELECT *
--- FROM tab
--- WHERE L2Distance(vector, [10.0, 0.0, 10.0, 0.0]) < 5.0
--- LIMIT 3;
+SELECT 'WHERE type, L2Distance';
+SELECT *
+FROM tab
+WHERE L2Distance(vector, [10.0, 0.0, 10.0, 0.0]) < 5.0
+LIMIT 3;
 
 SELECT 'WHERE type, L2Distance, check that index is used';
 EXPLAIN indexes=1
@@ -222,12 +207,11 @@ FROM tab
 WHERE L2Distance(vector, [10.0, 0.0, 10.0, 0.0]) < 5.0
 LIMIT 3;
 
--- See (*) why commented out
--- SELECT 'ORDER BY type, L2Distance';
--- SELECT *
--- FROM tab
--- ORDER BY L2Distance(vector, [10.0, 0.0, 10.0, 0.0])
--- LIMIT 3;
+SELECT 'ORDER BY type, L2Distance';
+SELECT *
+FROM tab
+ORDER BY L2Distance(vector, [10.0, 0.0, 10.0, 0.0])
+LIMIT 3;
 
 SELECT 'ORDER BY type, L2Distance, check that index is used';
 EXPLAIN indexes=1
@@ -237,6 +221,3 @@ ORDER BY L2Distance(vector, [10.0, 0.0, 10.0, 0.0])
 LIMIT 3;
 
 DROP TABLE tab;
-
--- (*) Storage and search in usearch indexes is inherently random. Tests which check for exact row matches would be unstable. Therefore,
--- comment them out.
