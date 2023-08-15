@@ -37,7 +37,6 @@ USearchIndexWithSerialization<metric_ak>::USearchIndexWithSerialization(size_t d
 template <unum::usearch::metric_kind_t metric_ak>
 void USearchIndexWithSerialization<metric_ak>::serialize([[maybe_unused]] WriteBuffer & ostr) const
 {
-    ostr.buffer().resize(ostr.buffer().size() + Base::stream_length());
     auto callback = [&ostr](void * from, size_t n)
     {
         ostr.write(reinterpret_cast<const char *>(from), n);
