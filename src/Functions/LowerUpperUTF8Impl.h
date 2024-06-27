@@ -2,6 +2,7 @@
 #include <Columns/ColumnString.h>
 #include <Functions/LowerUpperImpl.h>
 #include <base/defines.h>
+#include <base/find_symbols.h>
 #include <Poco/UTF8Encoding.h>
 #include <Common/StringUtils.h>
 #include <Common/UTF8Helpers.h>
@@ -57,12 +58,14 @@ struct LowerUpperUTF8Impl
 
             String output;
             input.toUTF8String(output);
+            const char * end = find_first_symbols<'\0'>(output.data(), output.data() + output.size());
+            size_t valid_size = end - output.data();
 
-            res_data.resize(curr_offset + output.size() + 1);
-            memcpySmallAllowReadWriteOverflow15(&res_data[curr_offset], output.data(), output.size());
-            res_data[curr_offset + output.size()] = 0;
+            res_data.resize(curr_offset + valid_size + 1);
+            memcpySmallAllowReadWriteOverflow15(&res_data[curr_offset], output.data(), valid_size);
+            res_data[curr_offset + valid_size] = 0;
 
-            curr_offset += output.size() + 1;
+            curr_offset += valid_size + 1;
             res_offsets[i] = curr_offset;
         }
     }
