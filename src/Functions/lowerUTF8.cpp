@@ -1,9 +1,11 @@
-#include <DataTypes/DataTypeString.h>
-#include <Functions/FunctionStringToString.h>
-#include <Functions/LowerUpperUTF8Impl.h>
-#include <Functions/FunctionFactory.h>
-#include <Poco/Unicode.h>
+#include "config.h"
 
+#if USE_ICU
+#    include <DataTypes/DataTypeString.h>
+#    include <Functions/FunctionFactory.h>
+#    include <Functions/FunctionStringToString.h>
+#    include <Functions/LowerUpperUTF8Impl.h>
+#    include <Poco/Unicode.h>
 
 namespace DB
 {
@@ -25,3 +27,4 @@ REGISTER_FUNCTION(LowerUTF8)
 }
 
 }
+#endif

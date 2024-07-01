@@ -1,19 +1,12 @@
 #pragma once
-#include <Columns/ColumnString.h>
-#include <Functions/LowerUpperImpl.h>
-#include <base/defines.h>
-#include <base/find_symbols.h>
-#include <Poco/UTF8Encoding.h>
-#include <Common/StringUtils.h>
-#include <Common/UTF8Helpers.h>
 
-#ifdef __SSE2__
-#include <emmintrin.h>
-#endif
-
+#include "config.h"
 #if USE_ICU
-#include <unicode/unistr.h>
-#endif
+#    include <Columns/ColumnString.h>
+#    include <Functions/LowerUpperImpl.h>
+#    include <base/find_symbols.h>
+#    include <unicode/unistr.h>
+#    include <Common/StringUtils.h>
 
 namespace DB
 {
@@ -44,22 +37,25 @@ struct LowerUpperUTF8Impl
 
         res_data.resize(data.size());
         res_offsets.resize_exact(offsets.size());
+
+        String output;
         size_t curr_offset = 0;
         for (size_t i = 0; i < offsets.size(); ++i)
         {
-            const auto * pos =  reinterpret_cast<const char *>(&data[offsets[i-1]]);
-            size_t size = offsets[i] - offsets[i-1];
+            const auto * data_start = reinterpret_cast<const char *>(&data[offsets[i - 1]]);
+            size_t size = offsets[i] - offsets[i - 1];
 
-            icu::UnicodeString input(pos, static_cast<int32_t>(size), "UTF-8");
+            icu::UnicodeString input(data_start, static_cast<int32_t>(size), "UTF-8");
             if constexpr (upper)
                 input.toUpper();
             else
                 input.toLower();
 
-            String output;
+            output.clear();
             input.toUTF8String(output);
-            const char * end = find_first_symbols<'\0'>(output.data(), output.data() + output.size());
-            size_t valid_size = end - output.data();
+
+            const char * res_end = find_first_symbols<'\0'>(output.data(), output.data() + output.size());
+            size_t valid_size = res_end - output.data();
 
             res_data.resize(curr_offset + valid_size + 1);
             memcpySmallAllowReadWriteOverflow15(&res_data[curr_offset], output.data(), valid_size);
@@ -77,3 +73,4 @@ struct LowerUpperUTF8Impl
 };
 
 }
+#endif

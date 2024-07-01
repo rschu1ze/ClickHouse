@@ -1,3 +1,5 @@
+-- Tags: no-fasttest, use-icu
+
 select lower('aaaaaaaaaaaaaaa012345789,.!aaaa' as str) = str;
 select lowerUTF8('aaaaaaaaaaaaaaa012345789,.!aaaa' as str) = str;
 select lower('AaAaAaAaAaAaAaA012345789,.!aAaA') = 'aaaaaaaaaaaaaaa012345789,.!aaaa';

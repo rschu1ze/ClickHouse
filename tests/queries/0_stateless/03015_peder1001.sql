@@ -1,3 +1,4 @@
+-- Tags: no-fasttest, use-icu
 DROP TABLE IF EXISTS test_data;
 
 CREATE TABLE test_data

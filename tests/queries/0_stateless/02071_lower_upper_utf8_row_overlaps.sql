@@ -1,3 +1,4 @@
+-- Tags: no-fasttest, use-icu
 drop table if exists utf8_overlap;
 create table utf8_overlap (str String) engine=Memory();
 

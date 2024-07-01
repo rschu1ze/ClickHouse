@@ -1,3 +1,4 @@
+-- Tags: no-fasttest, use-icu
 SELECT randomStringUTF8('string'); -- { serverError ILLEGAL_TYPE_OF_ARGUMENT }
 SELECT lengthUTF8(randomStringUTF8(100));
 SELECT toTypeName(randomStringUTF8(10));

@@ -1,3 +1,4 @@
+-- Tags: no-fasttest, use-icu
 --
 -- countSubstrings
 --
