@@ -1228,7 +1228,7 @@ bool PartMergerWriter::mutateOriginalPartAndPrepareProjections()
         if (ctx->minmax_idx)
             ctx->minmax_idx->update(cur_block, MergeTreeData::getMinMaxColumnsNames(ctx->metadata_snapshot->getPartitionKey()));
 
-        ctx->out->write(cur_block);
+        ctx->out->write(cur_block, true);
 
         /// TODO: move this calculation to DELETE FROM mutation
         if (ctx->count_lightweight_deleted_rows)
@@ -1989,7 +1989,7 @@ private:
         MergeTreePartition partition = ctx->new_data_part->partition;
         std::string part_name = ctx->new_data_part->getNewName(part_info);
 
-        auto [mutable_empty_part, _] = ctx->data->createEmptyPart(part_info, partition, part_name, ctx->txn);
+        auto [mutable_empty_part, _] = ctx->data->createEmptyPart(part_info, partition, part_name, ctx->txn, true);
         ctx->new_data_part = std::move(mutable_empty_part);
     }
 };

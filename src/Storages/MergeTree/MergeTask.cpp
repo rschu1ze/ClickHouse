@@ -815,7 +815,7 @@ bool MergeTask::ExecuteAndFinalizeHorizontalPart::executeImpl() const
         }
 
         global_ctx->rows_written += block.rows();
-        const_cast<MergedBlockOutputStream &>(*global_ctx->to).write(block);
+        const_cast<MergedBlockOutputStream &>(*global_ctx->to).write(block, nullptr);
 
         calculateProjections(block);
 
@@ -1120,7 +1120,7 @@ bool MergeTask::VerticalMergeStage::executeVerticalMergeForOneColumn() const
             return false;
 
         ctx->column_elems_written += block.rows();
-        ctx->column_to->write(block);
+        ctx->column_to->write(block, nullptr);
     } while (watch.elapsedMilliseconds() < step_time_ms);
 
     /// Need execute again

@@ -4,6 +4,7 @@
 
 #if USE_USEARCH
 
+#include <Storages/MergeTree/MergeTreeIndices.h>
 #include <Storages/MergeTree/VectorSimilarityCondition.h>
 #include <Common/Logger.h>
 #include <usearch/index_dense.hpp>
@@ -120,7 +121,7 @@ struct MergeTreeIndexAggregatorVectorSimilarity final : IMergeTreeIndexAggregato
 
     bool empty() const override { return !index || index->size() == 0; }
     MergeTreeIndexGranulePtr getGranuleAndReset() override;
-    void update(const Block & block, size_t * pos, size_t limit) override;
+    void update(const Block & block, size_t * pos, size_t limit, XPtr x) override;
 
     const String index_name;
     const Block index_sample_block;

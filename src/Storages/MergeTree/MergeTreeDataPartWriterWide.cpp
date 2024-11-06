@@ -275,7 +275,7 @@ void MergeTreeDataPartWriterWide::shiftCurrentMark(const Granules & granules_wri
     }
 }
 
-void MergeTreeDataPartWriterWide::write(const Block & block, const IColumn::Permutation * permutation)
+void MergeTreeDataPartWriterWide::write(const Block & block, const IColumn::Permutation * permutation, XPtr x)
 {
     /// On first block of data initialize streams for dynamic subcolumns.
     initDynamicStreamsIfNeeded(block);
@@ -353,7 +353,7 @@ void MergeTreeDataPartWriterWide::write(const Block & block, const IColumn::Perm
     if (settings.rewrite_primary_key)
         calculateAndSerializePrimaryIndex(primary_key_block, granules_to_write);
 
-    calculateAndSerializeSkipIndices(skip_indexes_block, granules_to_write);
+    calculateAndSerializeSkipIndices(skip_indexes_block, granules_to_write, std::move(x));
     calculateAndSerializeStatistics(block);
 
     shiftCurrentMark(granules_to_write);

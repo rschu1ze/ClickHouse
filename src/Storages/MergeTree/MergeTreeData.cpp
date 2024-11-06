@@ -4469,7 +4469,7 @@ MergeTreeData::PartsToRemoveFromZooKeeper MergeTreeData::removePartsInRangeFromW
 
         const auto & partition = parts_to_remove.front()->partition;
         String empty_part_name = empty_info.getPartNameAndCheckFormat(format_version);
-        auto [new_data_part, tmp_dir_holder] = createEmptyPart(empty_info, partition, empty_part_name, NO_TRANSACTION_PTR);
+        auto [new_data_part, tmp_dir_holder] = createEmptyPart(empty_info, partition, empty_part_name, NO_TRANSACTION_PTR, nullptr);
 
         MergeTreeData::Transaction transaction(*this, NO_TRANSACTION_RAW);
         renameTempPartAndAdd(new_data_part, transaction, lock, /*rename_in_transaction=*/ false);     /// All covered parts must be already removed
@@ -8892,7 +8892,7 @@ void MergeTreeData::incrementMergedPartsProfileEvent(MergeTreeDataPartType type)
 
 std::pair<MergeTreeData::MutableDataPartPtr, scope_guard> MergeTreeData::createEmptyPart(
         MergeTreePartInfo & new_part_info, const MergeTreePartition & partition, const String & new_part_name,
-        const MergeTreeTransactionPtr & txn)
+        const MergeTreeTransactionPtr & txn, XPtr x)
 {
     auto metadata_snapshot = getInMemoryMetadataPtr();
     auto settings = getSettings();
@@ -8967,7 +8967,7 @@ std::pair<MergeTreeData::MutableDataPartPtr, scope_guard> MergeTreeData::createE
 
     bool sync_on_insert = (*settings)[MergeTreeSetting::fsync_after_insert];
 
-    out.write(block);
+    out.write(block, x);
     /// Here is no projections as no data inside
     out.finalizePart(new_data_part, sync_on_insert);
 

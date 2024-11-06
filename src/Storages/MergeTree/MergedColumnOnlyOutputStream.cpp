@@ -58,12 +58,12 @@ MergedColumnOnlyOutputStream::MergedColumnOnlyOutputStream(
     writer_on_disk->setWrittenOffsetColumns(offset_columns_);
 }
 
-void MergedColumnOnlyOutputStream::write(const Block & block)
+void MergedColumnOnlyOutputStream::write(const Block & block, XPtr x)
 {
     if (!block.rows())
         return;
 
-    writer->write(block, nullptr);
+    writer->write(block, nullptr, x);
     new_serialization_infos.add(block);
 }
 

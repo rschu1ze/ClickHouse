@@ -80,14 +80,14 @@ public:
     /** All rows must correspond to same partition.
       * Returns part with unique name starting with 'tmp_', yet not added to MergeTreeData.
       */
-    TemporaryPart writeTempPart(BlockWithPartition & block, const StorageMetadataPtr & metadata_snapshot, ContextPtr context);
+    TemporaryPart writeTempPart(BlockWithPartition & block, const StorageMetadataPtr & metadata_snapshot, ContextPtr context, XPtr x);
 
     MergeTreeData::MergingParams::Mode getMergingMode() const
     {
         return data.merging_params.mode;
     }
 
-    TemporaryPart writeTempPartWithoutPrefix(BlockWithPartition & block, const StorageMetadataPtr & metadata_snapshot, int64_t block_number, ContextPtr context);
+    TemporaryPart writeTempPartWithoutPrefix(BlockWithPartition & block, const StorageMetadataPtr & metadata_snapshot, int64_t block_number, ContextPtr context, XPtr x);
 
     /// For insertion.
     static TemporaryPart writeProjectionPart(
@@ -121,7 +121,8 @@ private:
         const StorageMetadataPtr & metadata_snapshot,
         ContextPtr context,
         int64_t block_number,
-        bool need_tmp_prefix);
+        bool need_tmp_prefix,
+        XPtr x);
 
     static TemporaryPart writeProjectionPartImpl(
         const String & part_name,
@@ -131,7 +132,8 @@ private:
         LoggerPtr log,
         Block block,
         const ProjectionDescription & projection,
-        bool merge_is_needed);
+        bool merge_is_needed,
+        XPtr x);
 
     MergeTreeData & data;
     LoggerPtr log;

@@ -328,7 +328,7 @@ void updateImpl(const ColumnArray * column_array, const ColumnArray::Offsets & c
 
 }
 
-void MergeTreeIndexAggregatorVectorSimilarity::update(const Block & block, size_t * pos, size_t limit)
+void MergeTreeIndexAggregatorVectorSimilarity::update(const Block & block, size_t * pos, size_t limit, [[maybe_unused]] XPtr x)
 {
     if (*pos >= block.rows())
         throw Exception(

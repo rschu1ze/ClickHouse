@@ -40,7 +40,7 @@ public:
 
     virtual ~IMergeTreeDataPartWriter();
 
-    virtual void write(const Block & block, const IColumn::Permutation * permutation) = 0;
+    virtual void write(const Block & block, const IColumn::Permutation * permutation, XPtr x) = 0;
 
     virtual void fillChecksums(MergeTreeDataPartChecksums & checksums, NameSet & checksums_to_remove) = 0;
 

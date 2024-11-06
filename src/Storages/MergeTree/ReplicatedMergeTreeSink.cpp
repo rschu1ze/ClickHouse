@@ -363,7 +363,7 @@ void ReplicatedMergeTreeSinkImpl<async_insert>::consume(Chunk & chunk)
         }
 
         /// Write part to the filesystem under temporary name. Calculate a checksum.
-        auto temp_part = storage.writer.writeTempPart(current_block, metadata_snapshot, context);
+        auto temp_part = storage.writer.writeTempPart(current_block, metadata_snapshot, context, true);
 
         /// If optimize_on_insert setting is true, current_block could become empty after merge
         /// and we didn't create part.
@@ -522,7 +522,7 @@ void ReplicatedMergeTreeSinkImpl<true>::finishDelayedChunk(const ZooKeeperWithFa
             LOG_TRACE(log, "found duplicated inserts in the block");
             partition.block_with_partition.partition = std::move(partition.temp_part.part->partition.value);
             partition.temp_part.cancel();
-            partition.temp_part = storage.writer.writeTempPart(partition.block_with_partition, metadata_snapshot, context);
+            partition.temp_part = storage.writer.writeTempPart(partition.block_with_partition, metadata_snapshot, context, true);
         }
 
         /// reset the cache version to zero for every partition write.
@@ -568,7 +568,7 @@ void ReplicatedMergeTreeSinkImpl<true>::finishDelayedChunk(const ZooKeeperWithFa
             }
             partition.block_with_partition.partition = std::move(partition.temp_part.part->partition.value);
             /// partition.temp_part is already finalized, no need to call cancel
-            partition.temp_part = storage.writer.writeTempPart(partition.block_with_partition, metadata_snapshot, context);
+            partition.temp_part = storage.writer.writeTempPart(partition.block_with_partition, metadata_snapshot, context, true);
         }
     }
 

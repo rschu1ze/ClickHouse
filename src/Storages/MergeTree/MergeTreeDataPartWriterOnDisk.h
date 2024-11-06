@@ -132,7 +132,7 @@ protected:
     /// Write skip indices according to granules_to_write. Skip indices also have their own marks
     /// and one skip index granule can contain multiple "normal" marks. So skip indices serialization
     /// require additional state: skip_indices_aggregators and skip_index_accumulated_marks
-    void calculateAndSerializeSkipIndices(const Block & skip_indexes_block, const Granules & granules_to_write);
+    void calculateAndSerializeSkipIndices(const Block & skip_indexes_block, const Granules & granules_to_write, XPtr x);
 
     void calculateAndSerializeStatistics(const Block & stats_block);
 

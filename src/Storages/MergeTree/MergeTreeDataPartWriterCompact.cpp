@@ -179,7 +179,7 @@ void writeColumnSingleGranule(
 
 }
 
-void MergeTreeDataPartWriterCompact::write(const Block & block, const IColumn::Permutation * permutation)
+void MergeTreeDataPartWriterCompact::write(const Block & block, const IColumn::Permutation * permutation, XPtr x)
 {
     /// On first block of data initialize streams for dynamic subcolumns.
     initDynamicStreamsIfNeeded(block);
@@ -207,13 +207,13 @@ void MergeTreeDataPartWriterCompact::write(const Block & block, const IColumn::P
     {
         Block flushed_block = header.cloneWithColumns(columns_buffer.releaseColumns());
         auto granules_to_write = getGranulesToWrite(index_granularity, flushed_block.rows(), getCurrentMark(), /* last_block = */ false);
-        writeDataBlockPrimaryIndexAndSkipIndices(flushed_block, granules_to_write);
+        writeDataBlockPrimaryIndexAndSkipIndices(flushed_block, granules_to_write, x);
         setCurrentMark(getCurrentMark() + granules_to_write.size());
         calculateAndSerializeStatistics(flushed_block);
     }
 }
 
-void MergeTreeDataPartWriterCompact::writeDataBlockPrimaryIndexAndSkipIndices(const Block & block, const Granules & granules_to_write)
+void MergeTreeDataPartWriterCompact::writeDataBlockPrimaryIndexAndSkipIndices(const Block & block, const Granules & granules_to_write, XPtr x)
 {
     writeDataBlock(block, granules_to_write);
 
@@ -224,7 +224,7 @@ void MergeTreeDataPartWriterCompact::writeDataBlockPrimaryIndexAndSkipIndices(co
     }
 
     Block skip_indices_block = getIndexBlockAndPermute(block, getSkipIndicesColumns(), nullptr);
-    calculateAndSerializeSkipIndices(skip_indices_block, granules_to_write);
+    calculateAndSerializeSkipIndices(skip_indices_block, granules_to_write, x);
 }
 
 void MergeTreeDataPartWriterCompact::writeDataBlock(const Block & block, const Granules & granules)
@@ -292,7 +292,7 @@ void MergeTreeDataPartWriterCompact::fillDataChecksums(MergeTreeDataPartChecksum
             index_granularity.popMark();
             index_granularity.appendMark(granules_to_write.back().rows_to_write);
         }
-        writeDataBlockPrimaryIndexAndSkipIndices(block, granules_to_write);
+        writeDataBlockPrimaryIndexAndSkipIndices(block, granules_to_write, nullptr);
     }
 
 #ifndef NDEBUG

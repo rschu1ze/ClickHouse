@@ -121,7 +121,7 @@ void MergeTreeIndexAggregatorFullText::addToGinFilter(UInt32 rowID, const char *
         gin_filter.add(data + token_start, token_len, rowID, store);
 }
 
-void MergeTreeIndexAggregatorFullText::update(const Block & block, size_t * pos, size_t limit)
+void MergeTreeIndexAggregatorFullText::update(const Block & block, size_t * pos, size_t limit, [[maybe_unused]] XPtr x)
 {
     if (*pos >= block.rows())
         throw Exception(ErrorCodes::LOGICAL_ERROR, "The provided position is not less than the number of block rows. "

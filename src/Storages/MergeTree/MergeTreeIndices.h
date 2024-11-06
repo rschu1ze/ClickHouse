@@ -8,6 +8,7 @@
 #include <Storages/StorageInMemoryMetadata.h>
 #include <Storages/MergeTree/GinIndexStore.h>
 #include <Storages/MergeTree/MergeTreeDataPartChecksum.h>
+#include <Storages/MergeTree/x.h>
 #include <Storages/SelectQueryInfo.h>
 #include <Storages/MergeTree/MarkRange.h>
 #include <Storages/MergeTree/IDataPartStorage.h>
@@ -79,7 +80,7 @@ struct IMergeTreeIndexAggregator
     /// Updates the stored info using rows of the specified block.
     /// Reads no more than `limit` rows.
     /// After finishing updating `pos` will store the position of the first row which was not read.
-    virtual void update(const Block & block, size_t * pos, size_t limit) = 0;
+    virtual void update(const Block & block, size_t * pos, size_t limit, XPtr x) = 0;
 };
 
 using MergeTreeIndexAggregatorPtr = std::shared_ptr<IMergeTreeIndexAggregator>;

@@ -438,14 +438,14 @@ Block MergeTreeDataWriter::mergeBlock(
 }
 
 
-MergeTreeDataWriter::TemporaryPart MergeTreeDataWriter::writeTempPart(BlockWithPartition & block, const StorageMetadataPtr & metadata_snapshot, ContextPtr context)
+MergeTreeDataWriter::TemporaryPart MergeTreeDataWriter::writeTempPart(BlockWithPartition & block, const StorageMetadataPtr & metadata_snapshot, ContextPtr context, XPtr x)
 {
-    return writeTempPartImpl(block, metadata_snapshot, context, data.insert_increment.get(), /*need_tmp_prefix = */true);
+    return writeTempPartImpl(block, metadata_snapshot, context, data.insert_increment.get(), /*need_tmp_prefix = */true, x);
 }
 
-MergeTreeDataWriter::TemporaryPart MergeTreeDataWriter::writeTempPartWithoutPrefix(BlockWithPartition & block, const StorageMetadataPtr & metadata_snapshot, int64_t block_number, ContextPtr context)
+MergeTreeDataWriter::TemporaryPart MergeTreeDataWriter::writeTempPartWithoutPrefix(BlockWithPartition & block, const StorageMetadataPtr & metadata_snapshot, int64_t block_number, ContextPtr context, XPtr x)
 {
-    return writeTempPartImpl(block, metadata_snapshot, context, block_number, /*need_tmp_prefix = */false);
+    return writeTempPartImpl(block, metadata_snapshot, context, block_number, /*need_tmp_prefix = */false, x);
 }
 
 MergeTreeDataWriter::TemporaryPart MergeTreeDataWriter::writeTempPartImpl(
@@ -453,7 +453,8 @@ MergeTreeDataWriter::TemporaryPart MergeTreeDataWriter::writeTempPartImpl(
     const StorageMetadataPtr & metadata_snapshot,
     ContextPtr context,
     int64_t block_number,
-    bool need_tmp_prefix)
+    bool need_tmp_prefix,
+    XPtr x)
 {
     TemporaryPart temp_part;
     Block & block = block_with_partition.block;
@@ -700,7 +701,7 @@ MergeTreeDataWriter::TemporaryPart MergeTreeDataWriter::writeTempPartImpl(
         /*blocks_are_granules_size=*/ false,
         context->getWriteSettings());
 
-    out->writeWithPermutation(block, perm_ptr);
+    out->writeWithPermutation(block, perm_ptr, x);
 
     for (const auto & projection : metadata_snapshot->getProjections())
     {
@@ -744,7 +745,8 @@ MergeTreeDataWriter::TemporaryPart MergeTreeDataWriter::writeProjectionPartImpl(
     LoggerPtr log,
     Block block,
     const ProjectionDescription & projection,
-    bool merge_is_needed)
+    bool merge_is_needed,
+    XPtr x)
 {
     TemporaryPart temp_part;
     const auto & metadata_snapshot = projection.metadata;
@@ -848,7 +850,7 @@ MergeTreeDataWriter::TemporaryPart MergeTreeDataWriter::writeProjectionPartImpl(
         /*blocks_are_granules_size=*/ false,
         data.getContext()->getWriteSettings());
 
-    out->writeWithPermutation(block, perm_ptr);
+    out->writeWithPermutation(block, perm_ptr, x);
     auto finalizer = out->finalizePartAsync(new_data_part, false);
     temp_part.part = new_data_part;
     temp_part.streams.emplace_back(TemporaryPart::Stream{.stream = std::move(out), .finalizer = std::move(finalizer)});
@@ -869,7 +871,7 @@ MergeTreeDataWriter::TemporaryPart MergeTreeDataWriter::writeProjectionPart(
     bool merge_is_needed)
 {
     return writeProjectionPartImpl(
-        projection.name, false /* is_temp */, parent_part, data, log, std::move(block), projection, merge_is_needed);
+        projection.name, false /* is_temp */, parent_part, data, log, std::move(block), projection, merge_is_needed, nullptr);
 }
 
 /// This is used for projection materialization process which may contain multiple stages of
@@ -884,7 +886,7 @@ MergeTreeDataWriter::TemporaryPart MergeTreeDataWriter::writeTempProjectionPart(
 {
     auto part_name = fmt::format("{}_{}", projection.name, block_num);
     return writeProjectionPartImpl(
-        part_name, true /* is_temp */, parent_part, data, log, std::move(block), projection, /*merge_is_needed=*/true);
+        part_name, true /* is_temp */, parent_part, data, log, std::move(block), projection, /*merge_is_needed=*/true, nullptr);
 }
 
 }

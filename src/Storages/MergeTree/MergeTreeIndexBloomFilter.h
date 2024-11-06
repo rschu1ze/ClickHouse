@@ -118,7 +118,7 @@ public:
 
     MergeTreeIndexGranulePtr getGranuleAndReset() override;
 
-    void update(const Block & block, size_t * pos, size_t limit) override;
+    void update(const Block & block, size_t * pos, size_t limit, XPtr x) override;
 
 private:
     size_t bits_per_row;

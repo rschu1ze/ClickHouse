@@ -120,7 +120,7 @@ void MergeTreeSink::consume(Chunk & chunk)
             ProfileEventsScope scoped_attach(&part_counters);
 
             Stopwatch watch;
-            temp_part = storage.writer.writeTempPart(current_block, metadata_snapshot, context);
+            temp_part = storage.writer.writeTempPart(current_block, metadata_snapshot, context, true);
             elapsed_ns = watch.elapsed();
         }
 

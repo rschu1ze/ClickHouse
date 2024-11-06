@@ -156,7 +156,7 @@ MergeTreeIndexAggregatorSet::MergeTreeIndexAggregatorSet(const String & index_na
     columns = index_sample_block.cloneEmptyColumns();
 }
 
-void MergeTreeIndexAggregatorSet::update(const Block & block, size_t * pos, size_t limit)
+void MergeTreeIndexAggregatorSet::update(const Block & block, size_t * pos, size_t limit, [[maybe_unused]] XPtr x)
 {
     if (*pos >= block.rows())
         throw Exception(ErrorCodes::LOGICAL_ERROR, "The provided position is not less than the number of block rows. "

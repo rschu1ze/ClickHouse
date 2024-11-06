@@ -27,7 +27,7 @@ public:
         const MergeTreeWriterSettings & settings,
         const MergeTreeIndexGranularity & index_granularity);
 
-    void write(const Block & block, const IColumn::Permutation * permutation) override;
+    void write(const Block & block, const IColumn::Permutation * permutation, XPtr x) override;
 
     void fillChecksums(MergeTreeDataPartChecksums & checksums, NameSet & checksums_to_remove) override;
     void finish(bool sync) override;
@@ -44,7 +44,7 @@ private:
 
     /// Write block of rows into .bin file and marks in .mrk files, primary index in .idx file
     /// and skip indices in their corresponding files.
-    void writeDataBlockPrimaryIndexAndSkipIndices(const Block & block, const Granules & granules);
+    void writeDataBlockPrimaryIndexAndSkipIndices(const Block & block, const Granules & granules, XPtr x);
 
     void addToChecksums(MergeTreeDataPartChecksums & checksums);
 
