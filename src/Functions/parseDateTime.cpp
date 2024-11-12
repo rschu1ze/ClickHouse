@@ -193,13 +193,13 @@ namespace
         Int32 minute = 0; /// range [0, 59]
         Int32 second = 0; /// range [0, 59]
         Int32 microsecond = 0; /// range [0, 999999]
-        UInt32 scale = 0; /// Scale of DateTime64. When parse syntax is `Joda`, it range [0, 6]; When parse syntax is `MySQL`, it should be 6
+        UInt32 scale = 0; /// scale of the result DateTime64. Always 6 for ParseSytax == MySQL, [0, 6] for ParseSyntax == Joda.
 
         bool is_am = true; /// If is_hour_of_half_day = true and is_am = false (i.e. pm) then add 12 hours to the result DateTime
         bool hour_starts_at_1 = false; /// Whether the hour is clockhour
         bool is_hour_of_half_day = false; /// Whether the hour is of half day
 
-        bool has_time_zone_offset = false; /// If true, time zone offset is explicitly specified.
+        bool has_time_zone_offset = false; /// If true, timezone offset is explicitly specified.
         Int64 time_zone_offset = 0; /// Offset in seconds between current timezone to UTC.
 
         void reset()
@@ -630,10 +630,10 @@ namespace
                 {"time", static_cast<FunctionArgumentDescriptor::TypeValidator>(&isString), nullptr, "String"}};
             if constexpr (return_type == ReturnType::DateTime64)
                 mandatory_args.push_back(
-                    {"scale", static_cast<FunctionArgumentDescriptor::TypeValidator>(&isUInt8), &isColumnConst, "UInt8"});
+                    {"scale", static_cast<FunctionArgumentDescriptor::TypeValidator>(&isUInt8), &isColumnConst, "const UInt8"});
 
             FunctionArgumentDescriptors optional_args{
-                {"format", static_cast<FunctionArgumentDescriptor::TypeValidator>(&isString), nullptr, "String"},
+                {"format", static_cast<FunctionArgumentDescriptor::TypeValidator>(&isString), &isColumnConst, "const String"},
                 {"timezone", static_cast<FunctionArgumentDescriptor::TypeValidator>(&isString), &isColumnConst, "const String"}
             };
             validateFunctionArguments(*this, arguments, mandatory_args, optional_args);
@@ -648,8 +648,10 @@ namespace
                 if (const auto * col_scale = checkAndGetColumnConst<ColumnUInt8>(arguments[1].column.get()); col_scale != nullptr)
                     scale = col_scale->getValue<UInt8>();
                 else
-                    throw Exception(ErrorCodes::LOGICAL_ERROR, "The scale argument is not Const(UInt8) type.");
-
+                    throw Exception(
+                        ErrorCodes::ILLEGAL_COLUMN,
+                        "Illegal type in 2nd ('timezone') argument of function {}. Must be constant UInt8.",
+                        getName());
                 data_type = std::make_shared<DataTypeDateTime64>(scale, time_zone_name);
             }
 
@@ -660,12 +662,11 @@ namespace
 
         ColumnPtr executeImpl(const ColumnsWithTypeAndName & arguments, const DataTypePtr & result_type, size_t input_rows_count) const override
         {
-            DataTypePtr non_null_result_type;
+            DataTypePtr result_type_without_nullable;
             if constexpr (error_handling == ErrorHandling::Null)
-                /// Remove Nullable wrapper. It will be added back later.
-                non_null_result_type = removeNullable(result_type);
+                result_type_without_nullable = removeNullable(result_type); /// Remove Nullable wrapper. We will add it back later.h
             else
-                non_null_result_type = result_type;
+                result_type_without_nullable = result_type;
 
             if constexpr (return_type == ReturnType::DateTime)
             {
@@ -675,53 +676,52 @@ namespace
             }
             else
             {
-                const auto * datatime64_type = checkAndGetDataType<DataTypeDateTime64>(non_null_result_type.get());
-                MutableColumnPtr col_res = ColumnDateTime64::create(input_rows_count, datatime64_type->getScale());
+                const auto * result_type_without_nullable_casted = checkAndGetDataType<DataTypeDateTime64>(result_type_without_nullable.get());
+                MutableColumnPtr col_res = ColumnDateTime64::create(input_rows_count, result_type_without_nullable_casted->getScale());
                 ColumnDateTime64 * col_datetime64 = assert_cast<ColumnDateTime64 *>(col_res.get());
                 return executeImpl2<DataTypeDateTime64::FieldType>(arguments, result_type, input_rows_count, col_res, col_datetime64->getData());
             }
         }
 
         template<typename T>
-        ColumnPtr executeImpl2(const ColumnsWithTypeAndName & arguments, const DataTypePtr & result_type, size_t input_rows_count,
+        ColumnPtr executeImpl2(
+            const ColumnsWithTypeAndName & arguments, const DataTypePtr & result_type, size_t input_rows_count,
             MutableColumnPtr & col_res, PaddedPODArray<T> & res_data) const
         {
             const auto * col_str = checkAndGetColumn<ColumnString>(arguments[0].column.get());
             if (!col_str)
                 throw Exception(
                     ErrorCodes::ILLEGAL_COLUMN,
-                    "Illegal column {} of first ('str') argument of function {}. Must be string.",
-                    arguments[0].column->getName(),
+                    "Illegal type in 1st ('time') argument of function {}. Must be String.",
                     getName());
-
-            ColumnUInt8::MutablePtr col_null_map;
-            if constexpr (error_handling == ErrorHandling::Null)
-                col_null_map = ColumnUInt8::create(input_rows_count, 0);
 
             Int64 multiplier = 0;
             UInt32 scale = 0;
             if constexpr (return_type == ReturnType::DateTime64)
             {
-                const DataTypeDateTime64 * datatime64_type = checkAndGetDataType<DataTypeDateTime64>(removeNullable(result_type).get());
-                scale = datatime64_type->getScale();
+                const DataTypeDateTime64 * result_type_without_nullable_casted = checkAndGetDataType<DataTypeDateTime64>(removeNullable(result_type).get());
+                scale = result_type_without_nullable_casted->getScale();
                 multiplier = DecimalUtils::scaleMultiplier<DateTime64>(scale);
             }
 
+            ColumnUInt8::MutablePtr col_null_map;
+            if constexpr (error_handling == ErrorHandling::Null)
+                col_null_map = ColumnUInt8::create(input_rows_count, 0);
+
             const String format = getFormat(arguments, scale);
-            std::vector<Instruction> instructions = parseFormat(format);
+            const std::vector<Instruction> instructions = parseFormat(format);
             Int64OrError result = 0;
 
-            /// Check scale by counting how many 'S' characters exist in the format string when parse syntax is Joda and
-            /// return type is DateTime64.
             if constexpr (return_type == ReturnType::DateTime64 && parse_syntax == ParseSyntax::Joda)
             {
+                /// How many 'S' characters does the format string contain?
                 UInt32 s_count = 0;
                 for (const auto & instruction : instructions)
                 {
                     const String & fragment = instruction.getFragment();
-                    for (char ch : fragment)
+                    for (char c : fragment)
                     {
-                        if (ch != 'S')
+                        if (c != 'S')
                         {
                             s_count = 0;
                             break;
@@ -730,10 +730,10 @@ namespace
                             ++s_count;
                     }
                 }
-                /// If the number of 'S' characters in format string not euqals the scale, then throw an exception to report error.
+                /// The number of 'S' characters in the format string must be equal to the scale.
                 if (s_count != 0 && s_count != scale)
                     result = tl::unexpected(ErrorCodeAndMessage(ErrorCodes::BAD_ARGUMENTS,
-                        "The number of 'S' characters in the input format string {} does not equal the given scale value {}.",
+                        "The number of 'S' characters in the input format string {} is different than the scale {}.",
                         format,
                         std::to_string(scale)));
             }
@@ -788,7 +788,7 @@ namespace
 
                 for (const auto & instruction : instructions)
                 {
-                    if (auto res = instruction.perform(cur, end, datetime) ; res.has_value())
+                    if (auto res = instruction.perform(cur, end, datetime); res.has_value())
                     {
                         cur = *res;
                     }
@@ -1410,7 +1410,7 @@ namespace
                     if (date.scale != 6)
                         RETURN_ERROR(
                             ErrorCodes::CANNOT_PARSE_DATETIME,
-                            "Unable to parse fragment {} from {} because of the datetime scale {} is not 6",
+                            "Unable to parse fragment {} from {} because the datetime scale {} is not 6",
                             fragment,
                             std::string_view(cur, end - cur),
                             std::to_string(date.scale))
@@ -1835,6 +1835,7 @@ namespace
             static PosOrError jodaTimezoneOffset(size_t repetitions, Pos cur, Pos end, const String & fragment, DateTime<error_handling> & date)
             {
                 RETURN_ERROR_IF_FAILED(checkSpace(cur, end, 5, "jodaTimezoneOffset requires size >= 5", fragment))
+
                 Int32 sign;
                 if (*cur == '-')
                     sign = -1;
@@ -1843,7 +1844,7 @@ namespace
                 else
                     RETURN_ERROR(
                         ErrorCodes::CANNOT_PARSE_DATETIME,
-                        "Unable to parse fragment {} from {} because of unknown sign time zone offset: {}",
+                        "Unable to parse fragment {} from {} because of unknown sign in time zone offset: {}",
                         fragment,
                         std::string_view(cur, end - cur),
                         std::string_view(cur, 1))
@@ -1854,7 +1855,7 @@ namespace
                 if (hour < 0 || hour > 23)
                     RETURN_ERROR(
                         ErrorCodes::CANNOT_PARSE_DATETIME,
-                        "Unable to parse fragment {} from {} because of the hour of datetime not in range [0, 23]: {}",
+                        "Unable to parse fragment {} from {} because the hour of datetime not in range [0, 23]: {}",
                         fragment,
                         std::string_view(cur, end - cur),
                         std::string_view(cur, 1))
@@ -1863,7 +1864,7 @@ namespace
                 if (minute < 0 || minute > 59)
                     RETURN_ERROR(
                         ErrorCodes::CANNOT_PARSE_DATETIME,
-                        "Unable to parse fragment {} from {} because of the minute of datetime not in range [0, 59]: {}",
+                        "Unable to parse fragment {} from {} because the minute of datetime not in range [0, 59]: {}",
                         fragment,
                         std::string_view(cur, end - cur),
                         std::string_view(cur, 1))
@@ -2282,6 +2283,7 @@ namespace
 
             if (arguments.size() <= index_of_format_string_arg)
             {
+                /// No format string given. Use default format string.
                 String format;
                 if constexpr (parse_syntax == ParseSyntax::MySQL)
                     format = "%Y-%m-%d %H:%i:%s";
@@ -2302,8 +2304,7 @@ namespace
                 if (!col_format)
                     throw Exception(
                         ErrorCodes::ILLEGAL_COLUMN,
-                        "Illegal column {} of second ('format') argument of function {}. Must be constant string.",
-                        arguments[index_of_format_string_arg].column->getName(),
+                        "Illegal type in 'format' argument of function {}. Must be constant String.",
                         getName());
                 return col_format->getValue<String>();
             }
@@ -2316,13 +2317,12 @@ namespace
             else if (return_type == ReturnType::DateTime64 && arguments.size() < 4)
                 return DateLUT::instance();
 
-            size_t timezone_arg_index = arguments.size() - 1;
-            const auto * col = checkAndGetColumnConst<ColumnString>(arguments[timezone_arg_index].column.get());
+            size_t index_of_timezone_arg = arguments.size() - 1;
+            const auto * col = checkAndGetColumnConst<ColumnString>(arguments[index_of_timezone_arg].column.get());
             if (!col)
                 throw Exception(
                     ErrorCodes::ILLEGAL_COLUMN,
-                    "Illegal column {} of ('timezone') argument of function {}. Must be constant String.",
-                    arguments[timezone_arg_index].column->getName(),
+                    "Illegal type in 'timezone' argument of function {}. Must be constant String.",
                     getName());
 
             String time_zone = col->getValue<String>();
@@ -2411,16 +2411,16 @@ REGISTER_FUNCTION(ParseDateTime)
     factory.registerFunction<FunctionParseDateTimeOrZero>();
     factory.registerFunction<FunctionParseDateTimeOrNull>();
     factory.registerAlias("str_to_date", FunctionParseDateTimeOrNull::name, FunctionFactory::Case::Insensitive);
-    factory.registerFunction<FunctionParseDateTime64>();
-    factory.registerFunction<FunctionParseDateTime64OrZero>();
-    factory.registerFunction<FunctionParseDateTime64OrNull>();
-
     factory.registerFunction<FunctionParseDateTimeInJodaSyntax>();
     factory.registerFunction<FunctionParseDateTimeInJodaSyntaxOrZero>();
     factory.registerFunction<FunctionParseDateTimeInJodaSyntaxOrNull>();
+
     factory.registerFunction<FunctionParseDateTime64InJodaSyntax>();
     factory.registerFunction<FunctionParseDateTime64InJodaSyntaxOrZero>();
     factory.registerFunction<FunctionParseDateTime64InJodaSyntaxOrNull>();
+    factory.registerFunction<FunctionParseDateTime64>();
+    factory.registerFunction<FunctionParseDateTime64OrZero>();
+    factory.registerFunction<FunctionParseDateTime64OrNull>();
 }
 
 
