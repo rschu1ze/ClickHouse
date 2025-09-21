@@ -92,7 +92,7 @@ InterpreterSelectWithUnionQuery::InterpreterSelectWithUnionQuery(
                     func->arguments = std::make_shared<ASTExpressionList>();
                     func->children.clear();
                     func->children.push_back(func->arguments);
-    
+
                     // ORDER BY element
                     auto elem = std::make_shared<ASTOrderByElement>();
                     elem->direction = 1;
@@ -100,12 +100,12 @@ InterpreterSelectWithUnionQuery::InterpreterSelectWithUnionQuery(
                     elem->with_fill = false;
                     elem->children.clear();
                     elem->children.push_back(func);
-    
+
                     // ORDER BY list
                     auto list = std::make_shared<ASTExpressionList>();
                     list->children.clear();
                     list->children.push_back(elem);
-    
+
                     // Attach to the child SELECT
                     select->setExpression(ASTSelectQuery::Expression::ORDER_BY, list);
                 }
