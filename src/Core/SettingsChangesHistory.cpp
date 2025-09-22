@@ -45,6 +45,7 @@ const VersionToSettingsChangesMap & getSettingsChangesHistory()
             {"enable_join_runtime_filters", false, false, "New setting"},
             {"join_runtime_bloom_filter_bytes", 512_KiB, 512_KiB, "New setting"},
             {"join_runtime_bloom_filter_hash_functions", 3, 3, "New setting"},
+            {"inject_random_order_for_select_without_order_by", false, false, "New setting"},
             {"delta_lake_log_metadata", false, false, "New setting."},
         });
         addSettingsChanges(settings_changes_history, "25.9",
@@ -75,7 +76,6 @@ const VersionToSettingsChangesMap & getSettingsChangesHistory()
             {"os_threads_nice_value_query", 0, 0, "New setting."},
             {"os_threads_nice_value_materialized_view", 0, 0, "New setting."},
             {"os_thread_priority", 0, 0, "Obsolete setting."},
-            {"inject_random_order_for_select_without_order_by", false, false, "New setting"},
         });
         addSettingsChanges(settings_changes_history, "25.8",
         {

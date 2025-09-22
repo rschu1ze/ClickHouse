@@ -6918,8 +6918,10 @@ Possible values: -20 to 19.
 Use roaring bitmap for iceberg positional deletes.
 )", 0) \
     DECLARE(Bool, inject_random_order_for_select_without_order_by, false, R"(
-Tests-only: if true, inject a top-level ORDER BY rand() into SELECT/UNION queries that lack ORDER BY.
-Applied only at subquery_depth == 0; subqueries and INSERT ... SELECT are not affected.
+If enabled, injects 'ORDER BY rand()' into SELECT queries without ORDER BY clause.
+Applied only for subquery depth = 0. Subqueries and INSERT INTO ... SELECT are not affected.
+If the top-level construct is UNION, 'ORDER BY rand()' is injected into all children independently.
+Mostly useful for testing (missing ORDER BY is a source of non-deterministic query results).
     )", 0) \
     /* ####################################################### */ \
     /* ########### START OF EXPERIMENTAL FEATURES ############ */ \
